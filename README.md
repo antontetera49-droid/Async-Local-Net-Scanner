@@ -15,8 +15,6 @@ speed port availability checks without external dependencies.
 
 🚀 HOW TO RUN:
 Clone the repository:
-Open your terminal, clone the repository, and navigate into the folder:
-git clone https://github.com/your-username/async-local-net-scanner.git
 cd async-local-net-scanner
 Install dependencies:
 The core functionality relies entirely on Python's built-in standard libraries (asyncio, sys, typing), requiring zero external pip packages.
