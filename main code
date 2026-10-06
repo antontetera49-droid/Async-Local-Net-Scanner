@@ -1,0 +1,64 @@
+import asyncio
+import sys
+from typing import List
+
+async def check_port(host: str, port: int, timeout: float = 1.0) -> int | None:
+    """
+    Asynchronously checks if a specific port is open on the target host.
+    Returns the port number if open, otherwise None.
+    """
+    try:
+        # Attempt to establish an asynchronous socket connection
+        future = asyncio.open_connection(host, port)
+        reader, writer = await asyncio.wait_for(future, timeout=timeout)
+        
+        # Close the connection immediately once established
+        writer.close()
+        await writer.wait_closed()
+        return port
+    except (asyncio.TimeoutError, ConnectionRefusedError, OSError):
+        return None
+
+async def scan_ports(host: str, ports: List[int], concurrency: int = 100) -> List[int]:
+    """
+    Scans a list of ports on a host with a controlled concurrency limit using Semaphores.
+    """
+    semaphore = asyncio.Semaphore(concurrency)
+    
+    async def bounded_check(port: int) -> int | None:
+        async with semaphore:
+            return await check_port(host, port)
+            
+    print(f"[*] Scanning {host} across {len(ports)} ports...")
+    
+    # Run all port checks concurrently
+    tasks = [bounded_check(port) for port in ports]
+    results = await asyncio.gather(*tasks)
+    
+    # Filter out None values to keep only open ports
+    open_ports = [port for port in results if port is not None]
+    return sorted(open_ports)
+
+if __name__ == "__main__":
+    # Target configuration example
+    target_host = "127.0.0.1"
+    target_ports = list(range(1, 1025))  # Common well-known ports (1-1024)
+    
+    # Execute the async event loop
+    loop = asyncio.get_event_loop()
+    open_ports = loop.run_until_complete(scan_ports(target_host, target_ports))
+    
+    print(f"\n[+] Scan completed. Open ports on {target_host}:")
+    if open_ports:
+        for p in open_ports:
+            print(f"  -> Port {p} is OPEN")
+    else:
+            print("  -> No open ports found in the specified range.")
+#=========================================================================================================================================
+### 🛠 Need Custom Features, Scaling, or Priority Support?
+#Building a production system or need this tuned for your specific infrastructure? 
+
+#* ⚡️ Custom Integration & Anti-Bot Bypass
+#* 🚀 Dedicated Infrastructure Setup
+#* 💬 Direct Dev Support: [@Myhamed91](https://t.me/Myhamed91)
+#=========================================================================================================================================
